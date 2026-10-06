@@ -1,32 +1,75 @@
 ---
 name: timemix-after-sales
-description: Use when 处理TimeMix舞蹈室需要判断的售后问题，包括退款、转卡、停卡、延期、预约扣课、价格活动、余额、私教及客诉补偿，或需要参考历史处理结果。
+description: Use when 安装、初始化、检查或更新TimeMix售后Skill及本机Rules/Cases资料库，或处理TimeMix舞蹈室退款、转卡、停卡、延期、预约扣课、余额、私教及客诉，需要当前规则或历史处理结果。
 ---
 
 # TimeMix售后
 
-版本：v0.1。流程公开，经营Rules和真实Cases保持私有，以本机资料为依据。只分析、计算和拟回复；不操作门店后台、不发送客户消息、不修改资料、不提交上传Git。
+版本：v0.1.1。流程公开，经营Rules和真实Cases保持私有，以本机资料为依据。首次初始化可下载缺失资料库；售后处理只分析、计算和拟回复，不操作门店后台、不发送客户消息、不编辑业务资料、不提交上传Git。
 
-## 先验证本机资料
+## 安装入口与固定资料来源
 
-每次新售后分析、资料根目录变化或文件更新后，必须先完成实际读取检查。优先运行随附只读检查器：
+本Skill无需用户再提供资料库地址。公开Skill仓库为 https://github.com/linzuolvke/timemix_after_sales_skill ，技能入口是仓库内的`timemix-after-sales/SKILL.md`；必须安装整个`timemix-after-sales/`文件夹，不只导入单个Markdown。
 
-```text
-python3 <本Skill目录>/scripts/check_data.py
-python3 <本Skill目录>/scripts/check_data.py --root <资料根目录>
-```
+| 资料库 | 固定Git克隆地址 | 根目录下的文件夹 |
+| --- | --- | --- |
+| Rules（private） | https://github.com/linzuolvke/timemix_rules.git | `timemix_rules` |
+| Cases（private） | https://github.com/linzuolvke/timemix_cases.git | `timemix_cases` |
+
+安装/替换Skill后，先实际读取已安装的本文件并核对版本，确认`scripts/init_data.py`、`scripts/check_data.py`、`references/data-contract.md`完整存在。缺文件、旧版没有初始化工具或已安装文件没有上表地址时，报告“旧版或安装不完整”，回到公开仓库核对来源并补齐技能文件；不能反问用户资料库地址，不能假定下载成功就等于平台已安装并加载成功。替换已有技能时保留用户修改，按平台的安装/更新流程处理，不直接覆盖未知本地改动。
+
+Skill安装成功与资料初始化成功是两项独立结果，分别报告。必须读取完整本文件后执行初始化；只看到名称、description、README或旧聊天不能代替本流程。
+
+## 首次初始化与本机资料检查
+
+第一次调用本Skill时，先检查并初始化资料，再处理售后。安装Skill本身不保证平台自动运行脚本；用户请求“安装/初始化TimeMix资料”或首次调用售后时执行本流程。
 
 根目录优先级：本次用户显式指定路径、环境变量`TIMEMIX_DATA_ROOT`、系统默认路径。
 
 - macOS：用户目录下`Documents/Obsidian/TimeMix/`。
-- Windows：系统实际“文档”目录下`timemix/TimeMixData/`，需查询系统目录位置，兼容重定向，不拼接固定盘符、用户名或OneDrive路径。
+- Windows：系统实际“文档”目录下`timemix/TimeMixData/`，查询系统目录，兼容重定向，不拼接固定盘符、用户名或OneDrive路径。
 - 其他系统需显式指定。仅检查配置或默认路径，不全盘搜索。
 
-根目录必须同时包含`timemix_rules/`和`timemix_cases/`。检查器验证DATASET身份、必要文件、索引引用、active规则、Case清单和元数据、原件校验值及库内链接，输出简短检查结果，不向模型加载全库正文。
+先确认本机可运行的Python 3。`python3`只是示例；Windows按实际可用情况使用`python`、`py -3`或平台已有Python 3绝对路径，先确认版本及能实际运行，不能仅凭命令名称判断。按当前shell正确引用含空格的路径；PowerShell调用带引号的解释器绝对路径使用`&`。不因缺少`python3`就判定无Python或安装新依赖。
 
-没有Python但能读取本地文件的工具，可按[读取契约](references/data-contract.md)逐项完成同等检查。没有本地读取能力、缺任一资料库、文件为空/损坏、链接缺失或校验不符时，拒绝处理本次售后，明确具体障碍。口头确认“文件都在”、旧聊天、模型记忆、网上搜到的案例不能代替检查；不要继续给业务试算、建议方案或客户话术。可说明如何放置资料及解决读取权限。
+根目录必须包含`timemix_rules/`和`timemix_cases/`。先检查这两个目标目录是否存在：
 
-不联网、不自动pull、不替用户授权GitHub。离线完整资料可以使用；报告本次实际读取的Rules/Cases版本和本地修改状态，不称已确认最新。校验通过只证明本地结构可读，不证明所有记录已审核或规则是远端最新。
+1. **缺少任一库**：使用随附[初始化工具](scripts/init_data.py)，只下载缺少的库，随后完整校验。第一次安装/使用的请求包含补齐必要资料的授权；若本机安全策略或用户指令要求单独授权联网/写入，则取得该授权后再执行。不要求用户另复制长串安装命令。
+2. **两库均存在**：使用[只读检查器](scripts/check_data.py)；离线可用，不联网、不自动更新。已有空目录、损坏文件、身份不符均不算“缺库”，不能覆盖重装。
+3. **失败**：暂停售后处理，明确缺少的工具、登录/权限、网络或文件障碍。修复后重试；不根据旧聊天或模型记忆继续试算、给方案或客户话术。
+
+```text
+python3 "<本Skill目录>/scripts/init_data.py" --root "<资料根目录>"
+python3 "<本Skill目录>/scripts/check_data.py" --root "<资料根目录>"
+```
+
+两者均可省略`--root`使用环境变量或系统默认路径。尖括号需替换为真实路径，Python调用方式按本机调整。
+
+Windows PowerShell示例（解释器和路径必须实际存在）：
+
+```powershell
+py -3 "<本Skill目录>/scripts/init_data.py" --root "<资料根目录>"
+& "<Python 3解释器完整路径>" "<本Skill目录>/scripts/check_data.py" --root "<资料根目录>"
+```
+
+
+### 私有库下载和登录
+
+固定来源：[Rules](https://github.com/linzuolvke/timemix_rules)、[Cases](https://github.com/linzuolvke/timemix_cases)。默认克隆当前默认分支，记录实际版本；不把本Skill版本或历史数量当资料版本要求，不擅自降级。工具只需要Python标准库，下载还需要Git；可复用已有Git凭据或已登录的GitHub CLI，不显示凭据。无需为了已有可用Git凭据另装GitHub CLI。
+
+下载失败不能一律说“没有权限”。核对工具、网络、GitHub登录及目标库权限。有GitHub CLI时可通过`gh auth login --hostname github.com --git-protocol https --web`引导官方浏览器授权，必要时由用户完成身份步骤；没有CLI时先核对已有Git凭据管理器是否能完成官方授权；仅浏览器登录GitHub不代表Git已经能读取私有库。若缺少可用凭据管理器，由用户按平台权限确认安装GitHub CLI或配置已有Git凭据管理器，再完成官方授权。不自行创建令牌，不索取聊天中的密码/令牌/SSH私钥，不读取密钥内容。登录账号必须能读取两个私有库；缺权限则说明哪个库无法访问，等待用户授权账号后重试。安装依赖或系统权限按平台规则处理，不绕过审批。
+
+初始化先克隆到根目录内临时位置，身份检查通过才放入缺失目录；已成功下载的库和失败暂存目录保留，报告位置，不自动删除。全部资料完整校验通过才算初始化完成。重试只补缺失库，不覆盖现有库或本地改动。
+
+没有Python但能读取和执行Git的工具，可按上述固定来源、目录保护及[读取契约](references/data-contract.md)完成等效初始化和校验。无法执行下载时，说明平台限制及需要用户完成的最少步骤；只有能读文件时不能声称已自动安装。没有本地读取能力则停止，上传附件不等于本机读取。
+
+### 校验范围与更新
+
+检查器验证DATASET身份、必要文件、索引引用、active规则、Case清单、结案状态、审核状态字段、原件校验值及库内链接，不向模型加载全库正文。审核状态字段必须合法，并统计待审核案例；检查通过不代表案例内容均已审核批准，也不证明资料是远端最新。
+
+报告实际Rules/Cases版本、本地修改状态和校验结果。初始化工具会尝试只读Git状态检查；单独检查器不输出Git修改状态，需另用`git status --porcelain`核对，无法读取时标为未知，不将`content_state`当作Git修改状态。
+
+日常售后只读取本机资料，不自动pull、不设置定时更新。仅用户明确说“更新TimeMix资料库”时联网更新：先核对每个库Git来源确为上述对应仓库、存在跟踪分支且没有本地改动，再执行仅快进的pull并完整复验。来源不符、存在改动、无跟踪分支或不能快进时停止该库更新，保留文件并报告具体障碍；不reset、不stash、不合并解决冲突，不提交推送。单库已更新、另一库失败时如实报告，未完成两库复验前不处理售后。
 
 ## 判断与检索
 
