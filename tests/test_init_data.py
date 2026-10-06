@@ -116,11 +116,11 @@ class BootstrapTests(unittest.TestCase):
     def test_clone_failure_does_not_expose_helper_output(self):
         fake = subprocess.CompletedProcess(['git'], 1, b'SECRET_OUTPUT', b'SECRET_ERROR')
         with patch.object(self.mod.shutil, 'which', side_effect=lambda name: '/usr/bin/git' if name == 'git' else None):
-            with patch.object(self.mod.subprocess, 'run', return_value=fake) as run:
+            with patch.object(self.mod, 'run_bounded', return_value=fake):
                 with self.assertRaises(self.mod.InitError) as error:
                     self.mod.clone_repo('https://example.invalid/private.git', self.base / 'download')
         self.assertNotIn('SECRET', str(error.exception))
-        env = run.call_args.kwargs['env']
+        env = self.mod.git_environment()
         self.assertEqual(env['GIT_TERMINAL_PROMPT'], '0')
         self.assertEqual(env['GCM_INTERACTIVE'], 'never')
 

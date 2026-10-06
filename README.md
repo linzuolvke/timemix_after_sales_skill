@@ -2,7 +2,7 @@
 
 公开Skill位于`timemix-after-sales/`，将整个文件夹导入支持自定义Skill的工具。Rules和Cases独立保持私有，本公开项目不包含经营资料或访问密钥。
 
-当前版本为 **v0.1.1**。请使用[v0.1.1安装包](https://github.com/linzuolvke/timemix_after_sales_skill/releases/tag/v0.1.1)；旧v0.1安装包不包含首次自动初始化功能。
+当前版本为 **v0.1.2**，请使用[v0.1.2安装包](https://github.com/linzuolvke/timemix_after_sales_skill/releases/tag/v0.1.2)。v0.1.1不包含本次Windows凭据/原件字节修复；旧v0.1没有初始化功能。
 
 ## 给安装工具的入口说明
 
@@ -50,3 +50,11 @@ Windows默认：系统实际文档目录下`timemix/TimeMixData/`，兼容目录
 目标AI必须能实际读取本机文件，普通云聊天或上传附件不能假定具备此能力。支持本地读取而无原生Skill入口时，可按客户端支持方式提供SKILL.md及引用资源；仍需实际验证能读取和执行。
 
 日常使用不自动pull；用户明确要求更新时才按SKILL中的来源核对、工作区保护和仅快进流程更新并重新校验。
+
+## Windows初始化兼容（v0.1.2）
+
+初始化先做限时访问检查，输出进度，必要时对本次Git命令绕过PortableGit的helper-selector并选择已安装的manager；支持指定Git路径及凭据助手，不修改全局设置。访问默认30秒、下载默认180秒，超时尝试终止本次进程树并保留暂存。原件按字节校验，新库禁用Git换行转换并保存本地配置。
+
+首次授权可能需要用户完成浏览器身份步骤。如果助手环境没有可用交互入口，只请用户在自己的终端完成一次官方GitHub登录，随后由助手下载和校验两库，不要求用户手动clone。不把代理502误报为账号权限问题，不自动绕过代理；按失败原因采取下一步。
+
+参数详见`python3 scripts/init_data.py --help`（Python命令按本机实际情况调整）。
