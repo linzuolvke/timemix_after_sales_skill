@@ -1,6 +1,6 @@
 # TimeMix 售后 Skill
 
-当前版本：v0.2.0，配合Cases的新目录格式（schema_version 2）使用。
+当前版本：v0.2.1，配合Cases的新目录格式（schema_version 2）使用。
 
 帮助 TimeMix 舞蹈室处理退款、转卡、停卡、延期、预约扣课、体验券和私教等售后问题。先查本机现行规则，必要时参考历史案例，给出处理方案和可以直接发给客户的微信回复。
 
@@ -62,5 +62,9 @@ Windows 常用 Git Credential Manager（GCM）完成并保存 Git 登录。PTY �
 - AI 工作流程或回复风格改变：修改 SKILL.md
 
 版本安装包见 [Releases](https://github.com/linzuolvke/timemix_after_sales_skill/releases)。维护者的自动检查位于 `tests/`；通过检查不等于老板已审核案例内容。
+
+检查器只检查本机资料；输出`remote_latest_verified: false`表示没有联网核对远端版本，不表示资料损坏。
+
+发布ZIP内附README.md和SHA256SUMS.txt，后者用于核对包内文件；Release另附SHA256SUMS.txt用于核对ZIP本身。
 
 旧版Cases更新后由新版检查器核查。安装新版Skill不会自动更新已有Cases；明确输入“更新 TimeMix 的 Rules 和 Cases”后才同步。旧库或本地有改动时保护文件并报告，不覆盖。

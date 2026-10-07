@@ -65,8 +65,12 @@ def check_links(root, path, text):
 
 def identity(root, kind):
     meta = load_json(root / 'DATASET.json')
-    if meta.get('dataset') != f'timemix_{kind}' or meta.get('schema_version') != (1 if kind == 'rules' else 2):
+    if meta.get('dataset') != f'timemix_{kind}':
         raise DataError(f'{kind}资料身份或格式不符')
+    required_schema = 1 if kind == 'rules' else 2
+    if meta.get('schema_version') != required_schema:
+        label = 'Rules' if kind == 'rules' else 'Cases'
+        raise DataError(f'{label}本机格式{meta.get("schema_version", "未知")}，当前Skill需要格式{required_schema}，请明确更新资料库；保留现有目录')
     if not isinstance(meta.get('version'), str) or not meta['version']:
         raise DataError(f'{kind}缺少版本标识')
     required = meta.get('required_files')
@@ -143,14 +147,14 @@ def verify(root):
         if len(raw) != item.get('bytes') or hashlib.sha256(raw).hexdigest() != item.get('sha256'):
             raise DataError(f'来源校验失败：{path.name}')
         seen.add(item['path'])
-    expected = {str(p.relative_to(cases)) for p in cases.glob('CASE_*/*.md')}
+    expected = {p.relative_to(cases).as_posix() for p in cases.glob('CASE_*/*.md')}
     if seen != expected:
         raise DataError('文字文件与完整性清单不一致')
     if any((cases / name).exists() for name in ('cases', 'chats', 'raw', 'sources')):
         raise DataError('Cases仍存在旧目录，请更新资料库')
     return {'ok': True, 'root': str(root), 'rules_version': rm['version'],
             'rules_content_state': rm.get('content_state', 'unknown'),
-            'cases_version': cm['version'], 'cases_state': manifest.get('state', 'unknown'),
+            'cases_version': cm['version'],
             'rule_count': len(rule_ids), 'case_count': len(ids), 'cases_schema_version': 2,
             'source_file_count': len(originals), 'remote_latest_verified': False}
 
