@@ -44,15 +44,19 @@ class BootstrapTests(unittest.TestCase):
             q = p / name
             q.parent.mkdir(parents=True, exist_ok=True)
             q.write_text(json.dumps(value) if isinstance(value, dict) else value, encoding='utf-8')
-        put('DATASET.json', {'dataset': 'timemix_' + kind, 'schema_version': 1, 'version': 'v0.1.1', 'required_files': ['INDEX.md']})
+        put('DATASET.json', {'dataset': 'timemix_' + kind, 'schema_version': 1 if kind == 'rules' else 2, 'version': 'v0.1.1', 'required_files': ['INDEX.md']})
         if kind == 'rules':
             put('INDEX.md', '[rule](current/test.md)')
             put('current/test.md', '---\nid: RULE_TEST_001\nstatus: active\n---\nTest')
         else:
-            put('INDEX.md', '[case](cases/CASE_2026_001.md)')
+            put('INDEX.md', '[case](CASE_2026_001/case.md)')
             put('MANIFEST.json', {'version': 'v0.1.1', 'case_ids': ['CASE_2026_001'], 'case_count': 1})
-            put('raw_manifest.json', {'files': []})
-            put('cases/CASE_2026_001.md', '---\ncase_id: CASE_2026_001\nstatus: closed\nreview_status: approved\n---\nTest')
+
+            put('CASE_2026_001/case.md', '---\ncase_id: CASE_2026_001\ntitle: Test\nlegacy_ids: []\nissue_type: refund\ntags: []\nstatus: closed\ndate: 2026-01-01\n---\n## 案件事实\nTest\n## 客户诉求\nTest\n## 实际处理结果\nTest\n## 处理依据\nTest')
+            import hashlib
+            raw = (p / 'CASE_2026_001/case.md').read_bytes()
+            put('MANIFEST.json', {'version': 'v0.1.1', 'case_ids': ['CASE_2026_001'], 'case_count': 1,
+                'files': [{'path': 'CASE_2026_001/case.md', 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}]})
 
     def test_download_both_and_verify(self):
         result = self.mod.initialize(self.root)
@@ -99,8 +103,8 @@ class BootstrapTests(unittest.TestCase):
 
     def test_corrupt_existing_case_fails_offline(self):
         self.mod.initialize(self.root)
-        p = self.root / 'timemix_cases/cases/CASE_2026_001.md'
-        p.write_text(p.read_text().replace('approved', 'invented'))
+        p = self.root / 'timemix_cases/CASE_2026_001/case.md'
+        p.write_text(p.read_text().replace('closed', 'invented'))
         with patch.object(self.mod, 'clone_repo', side_effect=AssertionError('不应下载')):
             with self.assertRaises(self.mod.InitError):
                 self.mod.initialize(self.root)

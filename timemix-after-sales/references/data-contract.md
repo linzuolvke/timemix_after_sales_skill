@@ -4,7 +4,7 @@
 
 ## 共用身份标记
 
-DATASET.json必须含`dataset`（分别为`timemix_rules`、`timemix_cases`）、`schema_version: 1`、非空`version`及`required_files`数组，必须包含INDEX.md。逐项实际读取清单文件，空文件或缺失拒绝使用。不能只检查目录存在。
+DATASET.json必须含`dataset`（分别为`timemix_rules`、`timemix_cases`）、`schema_version`（Rules为1，Cases为2）、非空`version`及`required_files`数组，必须包含INDEX.md。逐项实际读取清单文件，空文件或缺失拒绝使用。不能只检查目录存在。
 
 ## Rules
 
@@ -15,11 +15,13 @@ DATASET.json必须含`dataset`（分别为`timemix_rules`、`timemix_cases`）�
 
 ## Cases
 
-- INDEX、SCHEMA、TAXONOMY、MANIFEST.json、raw_manifest.json及DATASET所列文件可读。
-- MANIFEST的case_ids不重复，case_count与列表和实际CASE文件一致，version与DATASET一致。
-- CASE_YYYY_NNN文件元数据case_id与文件名一致、业务status为closed；review_status为approved/reviewed/needs_review之一。`needs_review`仅供待审核参考，不混同业务状态。检查器核对字段并统计待审核数量，不替代内容审核。
-- CASE正文所引库内文件必须可读。来源文件按raw_manifest逐项验证路径、字节数及SHA-256，不按个人猜测修复。Cases本版使用历史Markdown和截图文字转写，原图不作为安装依赖；转写不冒充原截图。
-- historical相关Rule和today相关Rule入口分开；SCHEMA定义的字段优先，不要求旧示例字段名与当前结构完全相同。
+- INDEX、SCHEMA、TAXONOMY、MANIFEST及DATASET所列文件可读；Cases的schema_version必须为2。旧格式需要用户明确更新，不混读两套目录。
+- 每案目录`CASE_YYYY_NNN/case.md`，可选同目录records.md；MANIFEST的case_ids唯一，case_count与实际目录一致，version与DATASET一致。
+- case头部含case_id、title、legacy_ids、issue_type、tags、status、date；case_id与目录一致，status为closed。正文含案件事实、客户诉求、实际处理结果、处理依据。
+- discretion可选，只有granted/denied；owner_judgment有值时必须有discretion，不由检查器判定其真实性。历史破例不自动授权新的例外。
+- 校验Case和records的库内链接及MANIFEST files列出的字节数和SHA-256，清单与实际文字文件一致。校验失败不重算清单来掩盖变化。
+- 不依赖raw_manifest、云端截图、老板/AI完整讨论或旧review_status字段。旧cases/chats/raw/sources目录不作为新库内容保留。
+- records只能存实际聊天和相关记录，结构检查能发现部分AI讨论标记，不能代替人工内容纯度核查。老板后续确认放Case，拟稿不能当实际发送。
 
 无脚本能力时以上检查需要平台实际文件读写/校验工具完成；无法完成时说明限制并停止，不用口头确认替代。平台能看到上传附件不等于能读取电脑默认目录，不能据此绕过本机资料模式。
 

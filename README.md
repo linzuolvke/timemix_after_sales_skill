@@ -1,5 +1,7 @@
 # TimeMix 售后 Skill
 
+当前版本：v0.2.0，配合Cases的新目录格式（schema_version 2）使用。
+
 帮助 TimeMix 舞蹈室处理退款、转卡、停卡、延期、预约扣课、体验券和私教等售后问题。先查本机现行规则，必要时参考历史案例，给出处理方案和可以直接发给客户的微信回复。
 
 ## 安装和使用
@@ -56,7 +58,9 @@ Windows 常用 Git Credential Manager（GCM）完成并保存 Git 登录。PTY �
 日常使用不自动更新。需要同步时输入“更新 TimeMix 的 Rules 和 Cases”，助手核对仓库来源、保护本机改动、更新后重新检查。
 
 - 经营口径改变：维护 Rules 的现行规则、索引和变更记录
-- 已处理结束的新事件：维护 Cases 的案例和聊天 Markdown；未知结果先留待确认
+- 已处理结束的新事件：维护 Cases 的案例和聊天 Markdown；未知结果先留待确认；每案使用case.md和有实际资料才建立的records.md，原图和完整AI讨论留本机Wiki
 - AI 工作流程或回复风格改变：修改 SKILL.md
 
 版本安装包见 [Releases](https://github.com/linzuolvke/timemix_after_sales_skill/releases)。维护者的自动检查位于 `tests/`；通过检查不等于老板已审核案例内容。
+
+旧版Cases更新后由新版检查器核查。安装新版Skill不会自动更新已有Cases；明确输入“更新 TimeMix 的 Rules 和 Cases”后才同步。旧库或本地有改动时保护文件并报告，不覆盖。

@@ -65,7 +65,7 @@ def check_links(root, path, text):
 
 def identity(root, kind):
     meta = load_json(root / 'DATASET.json')
-    if meta.get('dataset') != f'timemix_{kind}' or meta.get('schema_version') != 1:
+    if meta.get('dataset') != f'timemix_{kind}' or meta.get('schema_version') != (1 if kind == 'rules' else 2):
         raise DataError(f'{kind}资料身份或格式不符')
     if not isinstance(meta.get('version'), str) or not meta['version']:
         raise DataError(f'{kind}缺少版本标识')
@@ -99,25 +99,39 @@ def verify(root):
     ids = manifest.get('case_ids')
     if not isinstance(ids, list) or not ids or len(set(ids)) != len(ids) or manifest.get('case_count') != len(ids):
         raise DataError('Cases编号或数量不一致')
-    actual = {p.stem for p in (cases / 'cases').glob('CASE_*.md')}
+    actual = {p.parent.name for p in cases.glob('CASE_*/case.md')}
     if actual != set(ids):
         raise DataError('Cases文件与清单不一致')
     if manifest.get('version') != cm['version']:
         raise DataError('Cases版本标识不一致')
-    needs_review = 0
     for cid in ids:
         if not re.fullmatch(r'CASE_\d{4}_\d{3}', cid):
             raise DataError('Case编号格式错误')
-        path = inside(cases, f'cases/{cid}.md')
+        path = inside(cases, f'{cid}/case.md')
         text = read_text(path)
         head = frontmatter(text)
         if head.get('case_id') != cid or head.get('status') != 'closed':
             raise DataError(f'Case身份或结案状态错误：{cid}')
-        if head.get('review_status') not in ('approved', 'reviewed', 'needs_review'):
-            raise DataError(f'Case审核状态错误：{cid}')
-        needs_review += head.get('review_status') == 'needs_review'
+        for key in ('title', 'legacy_ids', 'issue_type', 'tags', 'date'):
+            if not head.get(key):
+                raise DataError(f'Case缺少字段{key}：{cid}')
+        if head.get('discretion') not in (None, 'granted', 'denied'):
+            raise DataError(f'破例字段错误：{cid}')
+        if 'owner_judgment' in head and not head.get('discretion'):
+            raise DataError(f'老板判断缺少破例决定：{cid}')
+        if head['date'] != 'null' and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', head['date']):
+            raise DataError(f'Case日期格式错误：{cid}')
+        for section in ('案件事实', '客户诉求', '实际处理结果', '处理依据'):
+            if f'## {section}' not in text:
+                raise DataError(f'Case缺少{section}：{cid}')
+        record = cases / cid / 'records.md'
+        if record.exists():
+            record_text = read_text(record)
+            if re.search(r'Files mentioned by the user|思考状态|^## (?:ChatGPT|Codex|AI分析)', record_text, re.M):
+                raise DataError(f'实际记录混入AI讨论：{cid}')
+            check_links(cases, record, record_text)
         check_links(cases, path, text)
-    originals = load_json(cases / 'raw_manifest.json').get('files')
+    originals = manifest.get('files')
     if not isinstance(originals, list):
         raise DataError('缺少来源文件清单')
     seen = set()
@@ -129,10 +143,15 @@ def verify(root):
         if len(raw) != item.get('bytes') or hashlib.sha256(raw).hexdigest() != item.get('sha256'):
             raise DataError(f'来源校验失败：{path.name}')
         seen.add(item['path'])
+    expected = {str(p.relative_to(cases)) for p in cases.glob('CASE_*/*.md')}
+    if seen != expected:
+        raise DataError('文字文件与完整性清单不一致')
+    if any((cases / name).exists() for name in ('cases', 'chats', 'raw', 'sources')):
+        raise DataError('Cases仍存在旧目录，请更新资料库')
     return {'ok': True, 'root': str(root), 'rules_version': rm['version'],
             'rules_content_state': rm.get('content_state', 'unknown'),
             'cases_version': cm['version'], 'cases_state': manifest.get('state', 'unknown'),
-            'rule_count': len(rule_ids), 'case_count': len(ids), 'cases_needs_review': needs_review,
+            'rule_count': len(rule_ids), 'case_count': len(ids), 'cases_schema_version': 2,
             'source_file_count': len(originals), 'remote_latest_verified': False}
 
 def windows_documents():

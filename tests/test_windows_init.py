@@ -18,11 +18,14 @@ class WindowsRegression(unittest.TestCase):
     fixture = bootstrap.BootstrapTests.fixture
 
     def test_checkout_preserves_original_bytes_with_global_autocrlf(self):
-        raw = self.base / 'cases/raw/original.md'
-        raw.parent.mkdir()
+        raw = self.base / 'cases/CASE_2026_001/records.md'
+        raw.parent.mkdir(exist_ok=True)
         raw.write_bytes(b'original\nsecond line\n')
         import json
-        (self.base / 'cases/raw_manifest.json').write_text(json.dumps({'files': [{'path':'raw/original.md','bytes':raw.stat().st_size,'sha256':hashlib.sha256(raw.read_bytes()).hexdigest()}]}))
+        manifest = self.base / 'cases/MANIFEST.json'
+        value = json.loads(manifest.read_text())
+        value['files'].append({'path':'CASE_2026_001/records.md','bytes':raw.stat().st_size,'sha256':hashlib.sha256(raw.read_bytes()).hexdigest()})
+        manifest.write_text(json.dumps(value))
         self.git(self.base / 'cases','add','.')
         self.git(self.base / 'cases','-c','user.name=Test','-c','user.email=test@example.invalid','commit','-qm','source')
         config = self.base / 'global-config'
@@ -30,7 +33,7 @@ class WindowsRegression(unittest.TestCase):
         with patch.dict(os.environ, {'GIT_CONFIG_GLOBAL':str(config)}):
             result = self.mod.initialize(self.root)
         self.assertTrue(result['ok'])
-        self.assertEqual((self.root/'timemix_cases/raw/original.md').read_bytes(),raw.read_bytes())
+        self.assertEqual((self.root/'timemix_cases/CASE_2026_001/records.md').read_bytes(),raw.read_bytes())
         self.assertEqual(self.git(self.root/'timemix_cases','config','--local','core.autocrlf').strip(),'false')
 
     def test_selector_reset_before_manager(self):
