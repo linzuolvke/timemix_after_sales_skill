@@ -121,7 +121,7 @@ def clone_repo(url, destination, git_executable=None, credential_helper=None,
         raise access_failure(access)
     progress(f'开始下载：{destination.name}（最多{clone_timeout}秒；保留原始换行字节）')
     try:
-        result = run_bounded(command + ['clone', '--config', 'core.autocrlf=false',
+        result = run_bounded(command + ['clone', '--depth', '1', '--single-branch', '--no-tags', '--config', 'core.autocrlf=false',
                              '--config', 'core.eol=lf', '--', url, str(destination)], clone_timeout)
     except CommandTimeout as exc:
         raise InitError('下载超时，暂存目录保留；检查网络后可调大clone-timeout重试', 'clone_timeout') from exc

@@ -18,7 +18,7 @@ DATASET.json必须含`dataset`（分别为`timemix_rules`、`timemix_cases`）�
 - INDEX、SCHEMA、TAXONOMY、MANIFEST.json、raw_manifest.json及DATASET所列文件可读。
 - MANIFEST的case_ids不重复，case_count与列表和实际CASE文件一致，version与DATASET一致。
 - CASE_YYYY_NNN文件元数据case_id与文件名一致、业务status为closed；review_status为approved/reviewed/needs_review之一。`needs_review`仅供待审核参考，不混同业务状态。检查器核对字段并统计待审核数量，不替代内容审核。
-- CASE正文所引库内文件必须可读。原件按raw_manifest逐项验证路径、字节数及SHA-256；保持原始文件，不按个人猜测修复。
+- CASE正文所引库内文件必须可读。来源文件按raw_manifest逐项验证路径、字节数及SHA-256，不按个人猜测修复。Cases本版使用历史Markdown和截图文字转写，原图不作为安装依赖；转写不冒充原截图。
 - historical相关Rule和today相关Rule入口分开；SCHEMA定义的字段优先，不要求旧示例字段名与当前结构完全相同。
 
 无脚本能力时以上检查需要平台实际文件读写/校验工具完成；无法完成时说明限制并停止，不用口头确认替代。平台能看到上传附件不等于能读取电脑默认目录，不能据此绕过本机资料模式。
